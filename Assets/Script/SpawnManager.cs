@@ -1,17 +1,29 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using static GameManager;
 public class SpawnManager : MonoBehaviour
 {
     [SerializeField] Transform holder;
     [SerializeField] protected GameObject[] objectToSpawn;
     [SerializeField] protected List<GameObject> poolObj;
+    private float spawnTime;
     protected float zPosition;
     private float randomType;
 
-    public static float difficult = 4f;
+    
     void Start() {
+        switch (UImode.modeValue) {
+            case 0:
+                spawnTime = 15;
+                break;
+            case 1:
+                spawnTime = 10;
+                break;
+            case 2:
+                spawnTime = 8;
+                break;
+        }
         StartCoroutine(SpawnObjectRoutine());
     }
     void Update() {
@@ -19,11 +31,12 @@ public class SpawnManager : MonoBehaviour
 
     IEnumerator SpawnObjectRoutine() {
         while (true) {
-            yield return new WaitForSeconds(difficult); 
+            yield return new WaitForSeconds(spawnTime); 
             SpawnObject();
         }
     }
     void SpawnObject() {
+        if (!continueGame) { return; }
         randomType = Random.Range(1, 3);
         zPosition = Random.Range(6, 15);
         Vector3 spawnPoint = new Vector3 (MotorBike.playerPosition.position.x + 60,

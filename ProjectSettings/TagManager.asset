@@ -11,6 +11,8 @@ TagManager:
   - RightWay
   - WrongWay
   - RandomCar
+  - Prop
+  - Goal
   layers:
   - Default
   - TransparentFX

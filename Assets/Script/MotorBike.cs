@@ -1,18 +1,34 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
-
+using static GameManager;
 public class MotorBike : CarController
 {
     [SerializeField] protected GameObject transport;
+    [SerializeField] protected GameObject VictoryPanel;
+    protected float moveSpeed;
     public GameObject Transport => transport;
+    public GameObject[] NotiUI;
     private float zRangeMin = 4.2f;
     private float zRangeMax = 15.5f;
     public static Transform playerPosition;
+    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private GameObject scorePlus;
+    [SerializeField] private AudioSource trafficAccident;
     void Start()
     {
         
+        switch (UImode.modeValue) {
+            case 0:
+                moveSpeed = 7;
+                break;
+            case 1:
+                moveSpeed = 12;
+                break;
+            case 2:
+                moveSpeed = 15;
+                break;
+        }
     }
 
     // Update is called once per frame
@@ -20,19 +36,23 @@ public class MotorBike : CarController
     {
         playerPosition = transport.transform;
         Move();
-
+        scoreText.text = "" + score;
     }
     public override void Move() {
-            if (Input.GetKey(KeyCode.W)) {
+        if ( !continueGame)
+        {
+            return;
+        }
+        if (Input.GetKey(KeyCode.UpArrow)) {
                 transport.transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
             }
-            if (Input.GetKey(KeyCode.S)) {
+            if (Input.GetKey(KeyCode.DownArrow)) {
                 transport.transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
             }
-            if (Input.GetKey(KeyCode.D)) {
+            if (Input.GetKey(KeyCode.RightArrow)) {
                 transport.transform.Translate(Vector3.right * moveSpeed * Time.deltaTime);
             }
-            if (Input.GetKey(KeyCode.A)) {
+            if (Input.GetKey(KeyCode.LeftArrow)) {
                 transport.transform.Translate(Vector3.left * moveSpeed * Time.deltaTime);
             }
 
@@ -41,23 +61,68 @@ public class MotorBike : CarController
             transport.transform.position = new Vector3(transport.transform.position.x, transport.transform.position.y, zPosition);
     }
     private void OnTriggerEnter(Collider other) {
+        if (!continueGame) { return; }
         if (other.CompareTag("Traffic")) {
-            Debug.Log("Sai quy tắc giao thông! Vui lòng quay lại và đợi đèn xanh.");
+            if (!canMove) {
+                SoundEffController.playSound = true;
+                SoundEffController.rightChoice = false;
+                NotiUI[3].gameObject.SetActive(true);
+                GameManager.Instance.SetPauseButtonActive(false);
+                continueGame = false;
+            } else {
+                StartCoroutine(PlusScore());
+                SoundEffController.playSound = true;
+                SoundEffController.rightChoice = true;          
+                score += 10; 
+            };
         }
         if (other.CompareTag("CaB")) {
-            Debug.Log("Đây là phan duong cho ca 2 xe");
+            StartCoroutine(PlusScore());
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = true;
+            score += 10;
         }
         if (other.CompareTag("CarOnly")) {
-            Debug.Log("Day la phan duong cho o to");
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = false;
+            NotiUI[1].gameObject.SetActive(true);
+            Instance.SetPauseButtonActive(false);
+            continueGame = false;
+
         }
         if (other.CompareTag("RightWay")) {
-            Debug.Log("Ban da di dung duong");
+            StartCoroutine(PlusScore());
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = true;
+            score += 10;
         }
         if (other.CompareTag("WrongWay")) {
-            Debug.Log("Ban da di sai duong ");
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = false;
+            NotiUI[2].gameObject.SetActive(true);
+            GameManager.Instance.SetPauseButtonActive(false);
+            continueGame = false;
         }
         if (other.CompareTag("RandomCar")) {
-            Debug.Log("Tai nan giao thong ");
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = false;
+            trafficAccident.Play();
+            this.gameObject.SetActive(false);
+            NotiUI[0].gameObject.SetActive(true);
+            GameManager.Instance.SetPauseButtonActive(false);
+            continueGame = false;
+        }
+        if (other.CompareTag("Goal")) {
+            SoundEffController.playSound = true;
+            SoundEffController.rightChoice = true;
+            GameManager.continueGame = false;
+            VictoryPanel.SetActive(true);
+        }
+
+        IEnumerator PlusScore() {
+            scorePlus.SetActive(true);
+            yield return new WaitForSeconds(0.5f);
+            scorePlus.SetActive(false);
         }
     }
 }
